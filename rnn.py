@@ -5,6 +5,7 @@ from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import LSTM
 from tensorflow.keras.layers import Dropout
 from tensorflow.keras.models import load_model
+import matplotlib.pyplot as plt
 
 
 def read_data():
@@ -22,15 +23,20 @@ def read_data():
 
 
 def filter_data(nn_set):
-    return np.asarray([[float(x[3])] for x in nn_set])
+    return np.asarray([[float(x[3]), float(x[6])] for x in nn_set])
 
 
 def normalize(nn_set):
-    min_value = np.min(nn_set)
-    max_value = np.max(nn_set)
+    for i in range(nn_set.shape[1]):
+        # Find maximum and minimum values for normalization
+        min_value = nn_set[0][i]
+        max_value = nn_set[0][i]
+        for row in nn_set:
+            min_value = min(min_value, row[i])
+            max_value = max(max_value, row[i])
 
-    for row in nn_set:
-        row[0] = (row[0] - min_value) / (max_value - min_value)
+        for row in nn_set:
+            row[i] = (row[i] - min_value) / (max_value - min_value)
 
     return nn_set
 
@@ -40,6 +46,7 @@ def inverse_normalize(prices, train_set):
     max_value = np.max(train_set)
 
     output = []
+
     for price in prices:
         output.append(price[0] * (max_value - min_value) + min_value)
 
@@ -60,13 +67,13 @@ def train_model(train_set):
     model.add(LSTM(units=50, return_sequences=True, input_shape=(x_train.shape[1], x_train.shape[2])))
     model.add(Dropout(0.2))
 
-    model.add(LSTM(units=50, return_sequences=True))
+    model.add(LSTM(units=60, return_sequences=True))
     model.add(Dropout(0.2))
 
-    model.add(LSTM(units=50, return_sequences=True))
+    model.add(LSTM(units=80, return_sequences=True))
     model.add(Dropout(0.2))
 
-    model.add(LSTM(units=50))
+    model.add(LSTM(units=100))
     model.add(Dropout(0.2))
 
     model.add(Dense(units=1))
@@ -93,14 +100,33 @@ def test_model(test_set, train_set, original_train_set):
     return predicted_prices
 
 
+def only_open(arr):
+    return np.asarray([[x[0]] for x in arr])
+
+
+def show_results(output, target):
+    # plt.autoscale(False)
+    plt.plot(only_open(target), color="red", label="Real ETH price")
+    plt.title("ETH price prediction")
+    plt.xlabel('Time')
+    plt.ylabel('Price')
+    plt.legend()
+    plt.figure()
+    plt.plot(output, color="blue", label="Predicted ETH price")
+    plt.title("ETH price prediction")
+    plt.xlabel('Time')
+    plt.ylabel('Price')
+    plt.legend()
+    plt.show()
+
+
 def lstm_model():
     test_set, train_set = read_data()
     scaled_test_set = normalize(filter_data(test_set))
     scaled_train_set = normalize(filter_data(train_set))
     # train_model(scaled_train_set)
     predicted_prices = test_model(scaled_test_set, scaled_train_set, filter_data(train_set))
-    for price in filter_data(test_set):
-        print(price[0])
+    show_results(predicted_prices, filter_data(test_set))
 
 
 if __name__ == "__main__":
