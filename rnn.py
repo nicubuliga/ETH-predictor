@@ -23,7 +23,76 @@ def read_data():
 
 
 def filter_data(nn_set):
-    return np.asarray([[float(x[3]), float(x[6])] for x in nn_set])
+    nr_days_for_sma = 9
+
+    gain = [0]
+    loss = [0]
+    avg_gain_list = [0]
+    avg_loss_list = [0]
+
+    close_list = [float(nn_set[0][6])]
+    table = np.array([[float(nn_set[0][3]), float(nn_set[0][6]), 0, 0, 0]])
+    for i in range(1, len(nn_set) - 1):
+        if i < 14:
+            close = float(nn_set[i][6])
+            close_list.append(close)
+            if len(close_list) == nr_days_for_sma:
+                sma = float(sum(close_list) / nr_days_for_sma)
+                sma = float(round(sma, 2))
+
+                close_list.pop(0)
+            else:
+                sma = 0
+            table = np.append(table, [[float(nn_set[i][3]), float(nn_set[i][6]), 0, sma, 0]], axis=0)
+
+            last_close = float(nn_set[i - 1][6])
+            diff = close - last_close
+            if diff >= 0:
+                gain.append(diff)
+                loss.append(0)
+                avg_gain_list.append(0)
+                avg_loss_list.append(0)
+            else:
+                gain.append(0)
+                loss.append(float(float(-1) * diff))
+                avg_gain_list.append(0)
+                avg_loss_list.append(0)
+        else:
+            close = float(nn_set[i][6])
+            close_list.append(close)
+            if len(close_list) == nr_days_for_sma:
+                sma = float(sum(close_list) / nr_days_for_sma)
+                sma = float(round(sma, 2))
+                close_list.pop(0)
+            else:
+                sma = 0
+            last_close = float(nn_set[i - 1][6])
+            diff = close - last_close
+            if diff >= 0:
+                gain.append(diff)
+                loss.append(0)
+            else:
+                gain.append(0)
+                loss.append(float(float(-1) * diff))
+
+            if i == 14:
+                avg_gain = float(sum(gain) / 14)
+                avg_loss = float(sum(loss) / 14)
+            else:
+                avg_gain = (avg_gain_list[i - 1] * 13 + gain[i]) / 14
+                avg_loss = (avg_loss_list[i - 1] * 13 + loss[i]) / 14
+            avg_gain_list.append(avg_gain)
+            avg_loss_list.append(avg_loss)
+            if avg_loss > 0:
+                rs = avg_gain / avg_loss
+            else:
+                rs = 0
+            rsi = float(100 - (100 / (1 + rs)))
+
+            table = np.append(table, [[float(nn_set[i][3]), float(nn_set[i][6]), rsi, sma, 0]], axis=0)
+    print(table)
+    return table
+    # return np.asarray([[float(x[3]), float(x[6])] for x in nn_set])
 
 
 def normalize(nn_set):
