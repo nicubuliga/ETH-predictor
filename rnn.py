@@ -38,6 +38,12 @@ def read_data(nn_type, nr):
 
 def filter_data(nn_set):
     nr_days_for_sma = 9
+    nr_days_for_12ema = 12
+    nr_days_for_26ema = 26
+    ema12 = 0
+    ema26 = 0
+    multiplier12 = float(2/13)
+    multiplier26 = float(2/27)
 
     gain = [0]
     loss = [0]
@@ -45,7 +51,7 @@ def filter_data(nn_set):
     avg_loss_list = [0]
 
     close_list = [float(nn_set[0][6])]
-    table = np.array([[float(nn_set[0][3]), float(nn_set[0][6]), 0, 0]])
+    table = np.array([[float(nn_set[0][3]), float(nn_set[0][6]), 0, 0, 0]])
     for i in range(1, len(nn_set)):
         if i < 14:
             close = float(nn_set[i][6])
@@ -57,7 +63,11 @@ def filter_data(nn_set):
                 close_list.pop(0)
             else:
                 sma = 0
-            table = np.append(table, [[float(nn_set[i][3]), float(nn_set[i][6]), 0, sma]], axis=0)
+            if i == 12:
+                ema12 = close*multiplier12 + sma*(1-multiplier12)
+            if i > 12:
+                ema12 = close*multiplier12 + ema12*(1-multiplier12)
+            table = np.append(table, [[float(nn_set[i][3]), float(nn_set[i][6]), 0, sma, 0]], axis=0)
 
             last_close = float(nn_set[i - 1][6])
             diff = close - last_close
@@ -80,6 +90,14 @@ def filter_data(nn_set):
                 close_list.pop(0)
             else:
                 sma = 0
+
+            ema12 = close*multiplier12 + ema12*(1-multiplier12)
+            if i == 26:
+                ema26 = close*multiplier26 + sma*(1-multiplier26)
+            if i > 26:
+                ema26 = close*multiplier26 + ema26*(1-multiplier26)
+            macd = ema12 - ema26
+
             last_close = float(nn_set[i - 1][6])
             diff = close - last_close
             if diff >= 0:
@@ -103,7 +121,7 @@ def filter_data(nn_set):
                 rs = 0
             rsi = float(100 - (100 / (1 + rs)))
 
-            table = np.append(table, [[float(nn_set[i][3]), float(nn_set[i][6]), rsi, sma]], axis=0)
+            table = np.append(table, [[float(nn_set[i][3]), float(nn_set[i][6]), rsi, sma, macd]], axis=0)
     return table
     # return np.asarray([[float(x[3]), float(x[6])] for x in nn_set])
 
