@@ -31,8 +31,8 @@ def filter_data(nn_set):
     avg_loss_list = [0]
 
     close_list = [float(nn_set[0][6])]
-    table = np.array([[float(nn_set[0][3]), float(nn_set[0][6]), 0, 0, 0]])
-    for i in range(1, len(nn_set) - 1):
+    table = np.array([[float(nn_set[0][3]), float(nn_set[0][6]), 0, 0]])
+    for i in range(1, len(nn_set)):
         if i < 14:
             close = float(nn_set[i][6])
             close_list.append(close)
@@ -43,7 +43,7 @@ def filter_data(nn_set):
                 close_list.pop(0)
             else:
                 sma = 0
-            table = np.append(table, [[float(nn_set[i][3]), float(nn_set[i][6]), 0, sma, 0]], axis=0)
+            table = np.append(table, [[float(nn_set[i][3]), float(nn_set[i][6]), 0, sma]], axis=0)
 
             last_close = float(nn_set[i - 1][6])
             diff = close - last_close
@@ -89,8 +89,7 @@ def filter_data(nn_set):
                 rs = 0
             rsi = float(100 - (100 / (1 + rs)))
 
-            table = np.append(table, [[float(nn_set[i][3]), float(nn_set[i][6]), rsi, sma, 0]], axis=0)
-    print(table)
+            table = np.append(table, [[float(nn_set[i][3]), float(nn_set[i][6]), rsi, sma]], axis=0)
     return table
     # return np.asarray([[float(x[3]), float(x[6])] for x in nn_set])
 
@@ -193,7 +192,7 @@ def lstm_model():
     test_set, train_set = read_data()
     scaled_test_set = normalize(filter_data(test_set))
     scaled_train_set = normalize(filter_data(train_set))
-    # train_model(scaled_train_set)
+    train_model(scaled_train_set)
     predicted_prices = test_model(scaled_test_set, scaled_train_set, filter_data(train_set))
     show_results(predicted_prices, filter_data(test_set))
 
