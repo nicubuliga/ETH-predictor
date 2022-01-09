@@ -7,17 +7,31 @@ from tensorflow.keras.layers import Dropout
 from tensorflow.keras.models import load_model
 import matplotlib.pyplot as plt
 
+params = {
+    "daily": {
+        "nr": 60,
+        "epochs": 100,
+        "batch": 32
+    },
+    "hourly": {
+        "nr": 504,
+        "epochs": 20,
+        "batch": 128
+    },
+    "minute": 3000
+}
 
-def read_data():
+
+def read_data(nn_type, nr):
     rows = []
-    with open(r"data\ETHUSDT_day.csv", 'r') as file:
+    with open("data\\ETHUSDT_{}.csv".format(nn_type), 'r') as file:
         csvreader = csv.reader(file)
         header = next(csvreader)
         for row in csvreader:
             rows.append(row)
 
-    test_data = np.asarray(rows[:31])
-    train_data = np.asarray(rows[31:])
+    test_data = np.asarray(rows[:nr])
+    train_data = np.asarray(rows[nr:])
 
     return test_data[::-1], train_data[::-1]
 
@@ -121,12 +135,12 @@ def inverse_normalize(prices, train_set):
     return output
 
 
-def train_model(train_set):
+def train_model(train_set, nn_type):
     x_train = []
     y_train = []
 
-    for i in range(60, len(train_set)):
-        x_train.append(train_set[i - 60:i])
+    for i in range(params[nn_type]["nr"], len(train_set)):
+        x_train.append(train_set[i - params[nn_type]["nr"]:i])
         y_train.append(train_set[i][0])
     x_train = np.asarray(x_train)
     y_train = np.asarray(y_train)
@@ -149,18 +163,18 @@ def train_model(train_set):
     model.compile(optimizer='adam', loss='mean_squared_error')
 
     #  Train model
-    model.fit(x=x_train, y=y_train, epochs=100, batch_size=32)
+    model.fit(x=x_train, y=y_train, epochs=params[nn_type]["epochs"], batch_size=params[nn_type]["batch"])
 
-    model.save("trained_lstm")
+    model.save("trained_lstm_" + str(nn_type))
 
 
-def test_model(test_set, train_set, original_train_set):
-    model = load_model("trained_lstm")
-    full_set = np.concatenate((train_set[len(train_set) - 60:], test_set))
+def test_model(test_set, train_set, original_train_set, nn_type):
+    model = load_model("trained_lstm_" + str(nn_type))
+    full_set = np.concatenate((train_set[len(train_set) - params[nn_type]["nr"]:], test_set))
 
     x_test = []
-    for i in range(60, len(full_set)):
-        x_test.append(full_set[i - 60:i])
+    for i in range(params[nn_type]["nr"], len(full_set)):
+        x_test.append(full_set[i - params[nn_type]["nr"]:i])
 
     x_test = np.asarray(x_test)
     predicted_prices = model.predict(x_test)
@@ -189,12 +203,18 @@ def show_results(output, target):
 
 
 def lstm_model():
-    test_set, train_set = read_data()
+    nn_type, nr = get_params()
+    test_set, train_set = read_data(nn_type, nr)
     scaled_test_set = normalize(filter_data(test_set))
     scaled_train_set = normalize(filter_data(train_set))
-    train_model(scaled_train_set)
-    predicted_prices = test_model(scaled_test_set, scaled_train_set, filter_data(train_set))
+    train_model(scaled_train_set, nn_type)
+    predicted_prices = test_model(scaled_test_set, scaled_train_set, filter_data(train_set), nn_type)
     show_results(predicted_prices, filter_data(test_set))
+
+
+def get_params():
+    print("Dataset types: daily, hourly, minute")
+    return input("Enter dataset: "), int(input("Enter number: "))
 
 
 if __name__ == "__main__":
