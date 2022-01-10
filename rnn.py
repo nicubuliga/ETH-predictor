@@ -35,7 +35,6 @@ def read_data(nn_type, nr):
         for row in csvreader:
             rows.append(row)
 
-    print("pas1")
     test_data = np.asarray(rows[:nr])
     train_data = np.asarray(rows[nr:])
 
@@ -43,7 +42,6 @@ def read_data(nn_type, nr):
 
 
 def filter_data(nn_set):
-    print(len(nn_set))
     nr_days_for_sma = 9
     nr_days_for_12ema = 12
     nr_days_for_26ema = 26
@@ -136,7 +134,6 @@ def filter_data(nn_set):
 
 
 def normalize(nn_set):
-    print(nn_set.shape[1])
     for i in range(nn_set.shape[1]):
         # Find maximum and minimum values for normalization
         min_value = nn_set[0][i]
