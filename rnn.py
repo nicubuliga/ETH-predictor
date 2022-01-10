@@ -6,6 +6,7 @@ from tensorflow.keras.layers import LSTM
 from tensorflow.keras.layers import Dropout
 from tensorflow.keras.models import load_model
 import matplotlib.pyplot as plt
+import pickle
 
 params = {
     "daily": {
@@ -18,7 +19,11 @@ params = {
         "epochs": 20,
         "batch": 128
     },
-    "minute": 3000
+    "minute": {
+        "nr": 504,
+        "epochs": 20,
+        "batch": 128
+    }
 }
 
 
@@ -30,6 +35,7 @@ def read_data(nn_type, nr):
         for row in csvreader:
             rows.append(row)
 
+    print("pas1")
     test_data = np.asarray(rows[:nr])
     train_data = np.asarray(rows[nr:])
 
@@ -37,6 +43,7 @@ def read_data(nn_type, nr):
 
 
 def filter_data(nn_set):
+    print(len(nn_set))
     nr_days_for_sma = 9
     nr_days_for_12ema = 12
     nr_days_for_26ema = 26
@@ -53,6 +60,8 @@ def filter_data(nn_set):
     close_list = [float(nn_set[0][6])]
     table = np.array([[float(nn_set[0][3]), float(nn_set[0][6]), 0, 0, 0]])
     for i in range(1, len(nn_set)):
+        # if i % 10000 == 0:
+        #     print(i)
         if i < 14:
             close = float(nn_set[i][6])
             close_list.append(close)
@@ -127,6 +136,7 @@ def filter_data(nn_set):
 
 
 def normalize(nn_set):
+    print(nn_set.shape[1])
     for i in range(nn_set.shape[1]):
         # Find maximum and minimum values for normalization
         min_value = nn_set[0][i]
@@ -205,7 +215,6 @@ def only_open(arr):
 
 
 def show_results(output, target):
-    # plt.autoscale(False)
     plt.plot(only_open(target), color="red", label="Real ETH price")
     plt.title("ETH price prediction")
     plt.xlabel('Time')
@@ -220,12 +229,24 @@ def show_results(output, target):
     plt.show()
 
 
+def save_train_set(train_set):
+    with open("minute_train_set", "wb") as fd:
+        pickle.dump(train_set, fd)
+
+
+def get_train_set():
+    with open("minute_train_set", "rb") as fd:
+        data = pickle.load(fd)
+
+    return data
+
+
 def lstm_model():
     nn_type, nr = get_params()
     test_set, train_set = read_data(nn_type, nr)
     scaled_test_set = normalize(filter_data(test_set))
     scaled_train_set = normalize(filter_data(train_set))
-    train_model(scaled_train_set, nn_type)
+    # train_model(scaled_train_set, nn_type)
     predicted_prices = test_model(scaled_test_set, scaled_train_set, filter_data(train_set), nn_type)
     show_results(predicted_prices, filter_data(test_set))
 
