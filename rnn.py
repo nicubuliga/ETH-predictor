@@ -47,8 +47,8 @@ def filter_data(nn_set):
     nr_days_for_26ema = 26
     ema12 = 0
     ema26 = 0
-    multiplier12 = float(2/13)
-    multiplier26 = float(2/27)
+    multiplier12 = float(2 / 13)
+    multiplier26 = float(2 / 27)
 
     gain = [0]
     loss = [0]
@@ -71,9 +71,9 @@ def filter_data(nn_set):
             else:
                 sma = 0
             if i == 12:
-                ema12 = close*multiplier12 + sma*(1-multiplier12)
+                ema12 = close * multiplier12 + sma * (1 - multiplier12)
             if i > 12:
-                ema12 = close*multiplier12 + ema12*(1-multiplier12)
+                ema12 = close * multiplier12 + ema12 * (1 - multiplier12)
             table = np.append(table, [[float(nn_set[i][3]), float(nn_set[i][6]), 0, sma, 0]], axis=0)
 
             last_close = float(nn_set[i - 1][6])
@@ -98,11 +98,11 @@ def filter_data(nn_set):
             else:
                 sma = 0
 
-            ema12 = close*multiplier12 + ema12*(1-multiplier12)
+            ema12 = close * multiplier12 + ema12 * (1 - multiplier12)
             if i == 26:
-                ema26 = close*multiplier26 + sma*(1-multiplier26)
+                ema26 = close * multiplier26 + sma * (1 - multiplier26)
             if i > 26:
-                ema26 = close*multiplier26 + ema26*(1-multiplier26)
+                ema26 = close * multiplier26 + ema26 * (1 - multiplier26)
             macd = ema12 - ema26
 
             last_close = float(nn_set[i - 1][6])
@@ -238,8 +238,7 @@ def get_train_set():
     return data
 
 
-def lstm_model():
-    nn_type, nr = get_params()
+def lstm_model(nn_type, nr):
     test_set, train_set = read_data(nn_type, nr)
     scaled_test_set = normalize(filter_data(test_set))
     scaled_train_set = normalize(filter_data(train_set))
@@ -254,4 +253,4 @@ def get_params():
 
 
 if __name__ == "__main__":
-    lstm_model()
+    pass
